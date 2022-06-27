@@ -20,6 +20,8 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry;
 import java.util.Map;
+import java.util.ArrayList;
+import android.os.Parcelable;
 
 /** Flutter plugin for Firebase Analytics. */
 public class FirebaseAnalyticsPlugin implements MethodCallHandler, FlutterPlugin, ActivityAware {
@@ -183,6 +185,23 @@ public class FirebaseAnalyticsPlugin implements MethodCallHandler, FlutterPlugin
         bundle.putDouble(key, (Double) value);
       } else if (value instanceof Boolean) {
         bundle.putBoolean(key, (Boolean) value);
+      } else if (value instanceof Iterable<?>) {
+        ArrayList<Parcelable> list = new ArrayList<Parcelable>();
+
+        for (Object item : (Iterable<?>) value) {
+          if (item instanceof Map) {
+            list.add(createBundleFromMap((Map<String, Object>) item));
+          } else {
+            throw new IllegalArgumentException(
+              "Unsupported value type: "
+                + value.getClass().getCanonicalName()
+                + " in list at key "
+                + key);
+          }
+        }
+        bundle.putParcelableArrayList(key, list);
+      } else if (value instanceof Map<?, ?>) {
+        bundle.putParcelable(key, createBundleFromMap((Map<String, Object>) value));
       } else {
         throw new IllegalArgumentException(
             "Unsupported value type: " + value.getClass().getCanonicalName());
